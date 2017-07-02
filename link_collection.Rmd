@@ -1,7 +1,4 @@
----
-title: "Сбор ссылок на страницы УИКов с сайта ЦИК РФ"
-output: html_notebook
----
+# Сбор ссылок на страницы УИКов с сайта ЦИК РФ
 
 Открывая сайт ЦИК РФ, можно заметить, что пользование им людьми осложнено структурированностью и необходимостью кликать на кучу кнопочек. При работе машины с этим сайтом таких проблем не возникает. Наоборот, структурированность сайта обеспечивает единый алгоритм работы.
 
@@ -9,7 +6,7 @@ output: html_notebook
 
 Первый пакет `{rvest}` потребуется, чтобы по--простому и быстро собирать данные с страниц в Интернете. `{stringr}` предлагает функции для работы с последовательностью знаков (формат character). Наконец, последний пакет `{magrittr}` позволяет уменьшить количество повторений в коде таких элементов, как название объекта, а также предоставляет возможность сделать код компактным.
 
-```{r echo=TRUE,warning=FALSE,message=FALSE}
+```r
 # install.packages("rvest")
 library(rvest)
 # install.packages("stringr")
@@ -23,7 +20,7 @@ library(magrittr)
 Первая функция извлекает информацию из вектора с адресом ссылок, а также предоставляет информацию об элементах, в которых содержатся ссылки на более низкие избирательные комиссии. Вторая функция избавляется от всех лишних знаков, которые окружают содержимое нужного элемента, в данном случае ссылки на страницу избирательной комиссии более низкого ранга.
 
 Для скачивания потребуется функция, извлекающая страницу по ссылке, а также распознающая её содержимое. Она имеет именно такой вид, поскольку подходит для работы с УИК, а не избирательными комиссиями выше. 
-```{r echo=TRUE,warning=FALSE,message=FALSE}
+```r
 get_lower <- function(x) {
   x <- lapply(x,read_html)
   x <- lapply(x,function(y) html_nodes(y,"option"))
@@ -31,7 +28,7 @@ get_lower <- function(x) {
 ```
 
 Следующая функция позволит писать меньше строк для очистки знаковых переменных. Полезна при извлечении ссылок на страницы ОИК и УИК.
-```{r echo=TRUE,warning=FALSE,message=FALSE}
+```r
 str_clear <- function(x) {
   x <- as.character(x) # перевод в удобный формат для работы с функциями пакета {stringr}
   x <- x[-1] # первый элемент содержит ненужную информацию, его надо удалить
@@ -49,7 +46,7 @@ str_clear <- function(x) {
 
 Нужно присвоить объекту ссылку из адресной строки браузера (механизм немного различается для сайта ЦИК РФ и региональной избирательной комиссии; в случае одномандатных округов я показываю, как работает механизм с сайтом ЦИК РФ) как набор знаков (characters/string). Затем считать информацию о структуре `html`--странице, извлечь все узлы с ссылками на нижестоящие избирательные комиссии и очистить их от всех ненужных знаков.
 
-```{r echo=TRUE,warning=FALSE,message=FALSE}
+```r
 sd_link <- "http://www.vybory.izbirkom.ru/region/izbirkom?action=show&global=true&root=1000259&tvd=100100067796113&vrn=100100067795849&prver=0&pronetvd=0&region=0&sub_region=0&type=463&vibid=100100067796113"
 sd_urloik <- read_html(sd_link) %>% html_nodes(.,"option") %>% str_clear(.)
 ```
@@ -58,7 +55,7 @@ sd_urloik <- read_html(sd_link) %>% html_nodes(.,"option") %>% str_clear(.)
 
 Процесс сбора ссылок на нижестоящие комиссии не отличается от сбора ссылок на ОИКи, но для сбора ссылок на УИКи требуется перейти на сайт региональной избирательной комиссии. Для этого необходимо заменить пару элементов в структуре ссылок, вставив номер региона в нужные поля.
 
-```{r echo=TRUE,warning=FALSE,message=FALSE}
+```r
 sd_urldist <- get_lower(sd_urloik) %>% lapply(.,str_clear) %>% unlist(.) 
 ## что нужно сделать, чтобы получить результаты УИК
 sd_urldist <- str_replace(sd_urldist,"region=0","region=77") %>% str_replace(.,"sub_region=0","sub_region=77")
@@ -72,7 +69,7 @@ sd_urluik <- get_lower(sd_urldist) %>% lapply(.,str_clear) %>% unlist(.)
 
 Теперь нужно повторить те же действия для партийного списа, но для облегчения задачи я сразу взяла ссылку с сайта региональной избирательной комиссии.
 
-```{r echo=TRUE,warning=FALSE,message=FALSE}
+```r
 p_link <- "http://www.moscow_city.vybory.izbirkom.ru/region/region/moscow_city?action=show&root=1000259&tvd=100100067796113&vrn=100100067795849&region=77&global=true&sub_region=77&prver=0&pronetvd=0&vibid=100100067796113&type=242"
 p_urloik <- read_html(p_link) %>% html_nodes(.,"option") %>% str_clear(.)
 p_urldist <- get_lower(p_urloik) %>% lapply(.,str_clear) %>% unlist(.)
@@ -88,7 +85,7 @@ p_urluik <- get_lower(p_urldist) %>% lapply(.,str_clear) %>% unlist(.)
 
 ### На уровне регионов
 
-```{r echo=TRUE,warning=FALSE,message=FALSE}
+```r
 r_link <- "http://www.vybory.izbirkom.ru/region/region/izbirkom?action=show&root=1&tvd=100100067795854&vrn=100100067795849&region=0&global=1&sub_region=0&prver=0&pronetvd=0&vibid=100100067795854&type=242"
 r_urlrik <- read_html(r_link) %>% html_nodes(.,"option") %>% str_clear(.)
 # saveRDS(r_ik,"AllRegs_GD2016_Proportional.Rds")
@@ -104,7 +101,7 @@ r_urlrik <- read_html(r_link) %>% html_nodes(.,"option") %>% str_clear(.)
 
 Это потребовало, однако, знания, сколько ОИК в стране и сколько в каждой из них ТИК.
 
-```{r echo=TRUE,message=FALSE,warning=FALSE}
+```r
 r_urloik <- get_lower(r_urlrik)
 # сколько ОИК в каждом регионе
 r_noik <- sapply(r_urloik,length) %>% sapply(.,function(x) x-1) # эта информация нужна для точной конструкции номеров регионов; нужно скопировать этот вектор с помощью команды
@@ -121,7 +118,7 @@ num_dist <- readClipboard()
 
 Получив корректные номера регионов, можно продолжать дальше по намеченной схемой. Но предварительно нужно заменить номера регионов на верные.
 
-```{r echo=TRUE,message=FALSE,warning=FALSE}
+```r
 r_urldist <- str_split_fixed(r_urldist,"region=0",3) %>% as.data.frame()
 r_urldist <- paste0(r_urldist$V1,"region=",num_dist,r_urldist$V2,"region=",num_dist,r_urldist$V3)
 # скачивание ссылок на все страницы УИК может занять длительное время
