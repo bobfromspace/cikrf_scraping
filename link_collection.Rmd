@@ -87,6 +87,17 @@ p_urluik <- get_lower(p_urldist) %>% lapply(.,str_clear) %>% unlist(.)
 
 ### На уровне регионов
 
+Чтобы собрать ссылки на результаты выборов, нужно создать дополнительную функцию очистки знаковых переменных, но можно обойтись без неё, хотя места это займёт больше.
+
+```r
+str_cl2 <- function(xml_var) {
+  xml_var = as.character(xml_var)%>%str_replace(.,"<.{8}","")%>%
+    str_replace(.,"\">.*","")%>%str_replace_all(.,"&amp;","&")
+}
+```
+
+Теперь для сбора ссылок требуется только алгоритм перехода по страницам от уровня РФ к уровню регионов. К сожалению, переход не такой прямой и короткий, как хотелось бы. Код:
+
 ```r
 r_link <- "http://www.vybory.izbirkom.ru/region/region/izbirkom?action=show&root=1&tvd=100100067795854&vrn=100100067795849&region=0&global=1&sub_region=0&prver=0&pronetvd=0&vibid=100100067795854&type=242"
 r_urlrik <- read_html(r_link) %>% html_nodes(.,"option") %>% str_clear(.)
